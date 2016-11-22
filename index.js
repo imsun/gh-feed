@@ -100,6 +100,7 @@ router
 				const author = meta.get('name', 'a').children[0].data.trim()
 				feed.item({ title, url, categories, date, author })
 			})
+		this.set('Content-Type', 'application/rss+xml; charset=utf-8')
 		this.body = feed.xml()
 	})
 
