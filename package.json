@@ -1,6 +1,12 @@
 {
   "name": "gh-feed",
   "version": "0.0.1",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "engines": {
+    "node": "7.x"
+  },
   "dependencies": {
     "co-request": "^1.0.0",
     "htmlparser": "^1.7.7",
