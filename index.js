@@ -51,9 +51,19 @@ router
 	.get('/', function *() {
 		this.body = 'test'
 	})
-	.get('/issues/:owner/:repo', function *() {
+	.get('/:owner/:repo', function *() {
 		const { owner, repo } = this.params
-		const res = yield request(`${HOST_URL}/${owner}/${repo}/issues`)
+		const src = `${HOST_URL}/${owner}/${repo}/issues`
+
+		const feed = new RSS({
+			title: `${owner}/${repo}`,
+			generator: 'gh-feed',
+			feed_url: this.url,
+			site_url: src,
+			ttl: 60
+		})
+
+		const res = yield request(src)
 		const handler = new htmlparser.DefaultHandler((error, dom) => {
 			if (error) {
 				console.log(error)
@@ -64,7 +74,7 @@ router
 		const dom = handler.dom
 
 		// for better performance
-		const issues = domWrapper(dom)
+		domWrapper(dom)
 			.get(3) // html
 			.get(3) // body
 			.get(['attribs', 'role'], 'main') // main
@@ -76,22 +86,21 @@ router
 			.get(5)
 			.get(1) // ul
 			.getAll('name', 'li')
-			.map(li => {
+			.forEach(li => {
 				const content = li.get(1)
 				const main = content.get(['attribs', 'class'], 'float-left col-9 p-2 lh-condensed')
 				const title = main.get('name', 'a').children[0].data.trim()
 				const url = HOST_URL + main.get('name', 'a').attribs.href
 				const labels = main.get(['attribs', 'class'], 'labels')
-				const tags = labels === undefined
+				const categories = labels === undefined
 					? []
-					: labels.getAll('name', 'a')
-					.map(label => ({
-						name: label.children[0].data.trim(),
-						url: HOST_URL + label.attribs.href
-					}))
-				return { title, url, tags }
+					: labels.getAll('name', 'a').map(label => label.children[0].data.trim())
+				const meta = main.get(['attribs', 'class'], 'mt-1 text-small text-gray').get(1)
+				const date = meta.get('name', 'relative-time').attribs.datetime
+				const author = meta.get('name', 'a').children[0].data.trim()
+				feed.item({ title, url, categories, date, author })
 			})
-		this.body = JSON.stringify(issues)
+		this.body = feed.xml()
 	})
 
 app.use(router.routes())
