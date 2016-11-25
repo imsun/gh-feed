@@ -17,7 +17,9 @@ router
 	})
 	.get('/:owner/:repo', function *() {
 		const { owner, repo } = this.params
-		const src = `${HOST_URL}/${owner}/${repo}/issues`
+		const author = this.query.author
+		const authorFilter = author ? `created_by/${author}` : ''
+		const src = `${HOST_URL}/${owner}/${repo}/issues/${authorFilter}`
 
 		const avatarRes = yield request(`${HOST_URL}/${owner}.png`)
 		const feed = new RSS({
@@ -31,24 +33,28 @@ router
 
 		const res = yield request(src)
 		const doc = parser.parseFromString(res.body, 'text/html')
-		const issues = Array.from(doc.getElementsByTagName('ul')[1].getElementsByTagName('li'))
-			.map(li => {
-				const issue = {}
-				Array.from(li.getElementsByTagName('a')).forEach(a => {
-					const className = a.getAttribute('class')
-					if (/h4/.test(className)) {
-						issue.title = a.textContent.trim()
-						issue.url = HOST_URL + a.getAttribute('href')
-					} else if (/label/.test(className)) {
-						issue.categories = issue.categories || []
-						issue.categories.push(a.textContent.trim())
-					} else if (className === 'tooltipped tooltipped-s muted-link') {
-						issue.author = a.textContent.trim()
-					}
+		const issues = []
+		const ul = doc.getElementsByTagName('ul')[1]
+		if (ul && ul.getAttribute('class') === 'Box-body js-navigation-container js-active-navigation-container') {
+			Array.from(ul.getElementsByTagName('li'))
+				.forEach(li => {
+					const issue = {}
+					Array.from(li.getElementsByTagName('a')).forEach(a => {
+						const className = a.getAttribute('class')
+						if (/h4/.test(className)) {
+							issue.title = a.textContent.trim()
+							issue.url = HOST_URL + a.getAttribute('href')
+						} else if (/label/.test(className)) {
+							issue.categories = issue.categories || []
+							issue.categories.push(a.textContent.trim())
+						} else if (className === 'tooltipped tooltipped-s muted-link') {
+							issue.author = a.textContent.trim()
+						}
+					})
+					issue.date = li.getElementsByTagName('relative-time')[0].getAttribute('datetime')
+					issues.push(issue)
 				})
-				issue.date = li.getElementsByTagName('relative-time')[0].getAttribute('datetime')
-				return issue
-			})
+		}
 
 		yield issues.map(issue => {
 			return function *() {
