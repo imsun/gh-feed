@@ -9,9 +9,9 @@
   },
   "dependencies": {
     "co-request": "^1.0.0",
-    "htmlparser": "^1.7.7",
     "koa": "^1.2.4",
     "koa-router": "^5.4.0",
-    "rss": "^1.2.1"
+    "rss": "^1.2.1",
+    "xmldom": "^0.1.22"
   }
 }

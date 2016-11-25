@@ -3,49 +3,12 @@ const router = require('koa-router')()
 
 const request = require('co-request')
 const RSS = require('rss')
-const htmlparser = require('htmlparser')
+const { DOMParser } = require('xmldom')
+const parser = new DOMParser({
+	errorHandler: {}
+})
 
 const HOST_URL = 'https://github.com'
-
-function get(key, value) {
-	if (value === undefined) {
-		if (this.children) {
-			return domWrapper(this.children[key])
-		} else {
-			return domWrapper(this[key])
-		}
-	} else {
-		key = typeof key === 'string' ? [key] : key
-		for (let i = 0, len = this.children.length; i < len; i++) {
-			try {
-				const realValue = key.reduce((prev, current) => prev[current], this.children[i])
-				if (realValue === value) {
-					return domWrapper(this.children[i])
-				}
-			} catch(e) {}
-		}
-	}
-}
-
-function getAll(key, value) {
-	key = typeof key === 'string' ? [key] : key
-	const result = domWrapper([])
-	this.children.forEach(child => {
-		try {
-			const realValue = key.reduce((prev, current) => prev[current], child)
-			if (realValue === value) {
-				result.push(domWrapper(child))
-			}
-		} catch(e) {}
-	})
-	return result
-}
-
-function domWrapper(dom) {
-	dom.get = get.bind(dom)
-	dom.getAll = getAll.bind(dom)
-	return dom
-}
 
 router
 	.get('/', function *() {
@@ -64,42 +27,26 @@ router
 		})
 
 		const res = yield request(src)
-		const handler = new htmlparser.DefaultHandler((error, dom) => {
-			if (error) {
-				console.log(error)
-			}
-		})
-		const parser = new htmlparser.Parser(handler)
-		parser.parseComplete(res.body)
-		const dom = handler.dom
-
-		// for better performance
-		domWrapper(dom)
-			.get(3) // html
-			.get(3) // body
-			.get(['attribs', 'role'], 'main') // main
-			.get(1)
-			.get(1) // js-repo-pjax-container
-			.get(3) // container
-			.get(1) // repository-content
-			.get(1) // issues-listing
-			.get(5)
-			.get(1) // ul
-			.getAll('name', 'li')
+		const doc = parser.parseFromString(res.body, 'text/html')
+		Array.from(doc.getElementsByTagName('ul')[1].getElementsByTagName('li'))
 			.forEach(li => {
-				const content = li.get(1)
-				const main = content.get(['attribs', 'class'], 'float-left col-9 p-2 lh-condensed')
-				const title = main.get('name', 'a').children[0].data.trim()
-				const url = HOST_URL + main.get('name', 'a').attribs.href
-				const labels = main.get(['attribs', 'class'], 'labels')
-				const categories = labels === undefined
-					? []
-					: labels.getAll('name', 'a').map(label => label.children[0].data.trim())
-				const meta = main.get(['attribs', 'class'], 'mt-1 text-small text-gray').get(1)
-				const date = meta.get('name', 'relative-time').attribs.datetime
-				const author = meta.get('name', 'a').children[0].data.trim()
-				feed.item({ title, url, categories, date, author })
+				const issue = {}
+				Array.from(li.getElementsByTagName('a')).forEach(a => {
+					const className = a.getAttribute('class')
+					if (/h4/.test(className)) {
+						issue.title = a.firstChild.data.trim()
+						issue.url = a.getAttribute('href')
+					} else if (/label/.test(className)) {
+						issue.categories = issue.categories || []
+						issue.categories.push(a.firstChild.data.trim())
+					} else if (className === 'tooltipped tooltipped-s muted-link') {
+						issue.author = a.firstChild.data.trim()
+					}
+				})
+				issue.date = li.getElementsByTagName('relative-time')[0].getAttribute('datetime')
+				feed.item(issue)
 			})
+
 		this.set('Content-Type', 'application/rss+xml; charset=utf-8')
 		this.body = feed.xml()
 	})
