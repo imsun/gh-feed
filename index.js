@@ -24,6 +24,7 @@ router
 			generator: 'gh-feed',
 			feed_url: this.url,
 			site_url: src,
+			image_url: `${HOST_URL}/${owner}.png`,
 			ttl: 60
 		})
 
