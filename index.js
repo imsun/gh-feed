@@ -19,12 +19,13 @@ router
 		const { owner, repo } = this.params
 		const src = `${HOST_URL}/${owner}/${repo}/issues`
 
+		const avatarRes = yield request(`${HOST_URL}/${owner}.png`)
 		const feed = new RSS({
 			title: `${owner}/${repo}`,
 			generator: 'gh-feed',
 			feed_url: this.url,
 			site_url: src,
-			image_url: `${HOST_URL}/${owner}.png`,
+			image_url: avatarRes.request.uri.href,
 			ttl: 60
 		})
 
