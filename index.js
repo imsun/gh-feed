@@ -3,10 +3,11 @@ const router = require('koa-router')()
 
 const request = require('co-request')
 const RSS = require('rss')
-const { DOMParser } = require('xmldom')
+const { DOMParser, XMLSerializer } = require('xmldom')
 const parser = new DOMParser({
 	errorHandler: {}
 })
+const serlializer = new XMLSerializer()
 
 const HOST_URL = 'https://github.com'
 
@@ -28,25 +29,40 @@ router
 
 		const res = yield request(src)
 		const doc = parser.parseFromString(res.body, 'text/html')
-		Array.from(doc.getElementsByTagName('ul')[1].getElementsByTagName('li'))
-			.forEach(li => {
+		const issues = Array.from(doc.getElementsByTagName('ul')[1].getElementsByTagName('li'))
+			.map(li => {
 				const issue = {}
 				Array.from(li.getElementsByTagName('a')).forEach(a => {
 					const className = a.getAttribute('class')
 					if (/h4/.test(className)) {
-						issue.title = a.firstChild.data.trim()
-						issue.url = a.getAttribute('href')
+						issue.title = a.textContent.trim()
+						issue.url = HOST_URL + a.getAttribute('href')
 					} else if (/label/.test(className)) {
 						issue.categories = issue.categories || []
-						issue.categories.push(a.firstChild.data.trim())
+						issue.categories.push(a.textContent.trim())
 					} else if (className === 'tooltipped tooltipped-s muted-link') {
-						issue.author = a.firstChild.data.trim()
+						issue.author = a.textContent.trim()
 					}
 				})
 				issue.date = li.getElementsByTagName('relative-time')[0].getAttribute('datetime')
-				feed.item(issue)
+				return issue
 			})
 
+		yield issues.map(issue => {
+			return function *() {
+				const res = yield request(issue.url)
+				const body = res.body.replace(/<!-- '"` --><!-- <\/textarea><\/xmp> --><\/option><\/form>/g, '')
+				const id = body.match(/id="(issue-.*?)"/)[1]
+				const doc = parser.parseFromString(body, 'text/html')
+				const contentElement = doc
+					.getElementById(id)
+					.childNodes[3]
+					.childNodes[1]
+					.childNodes
+				issue.description = serlializer.serializeToString(contentElement)
+				feed.item(issue)
+			}
+		})
 		this.set('Content-Type', 'application/rss+xml; charset=utf-8')
 		this.body = feed.xml()
 	})
