@@ -12,14 +12,9 @@ const serlializer = new XMLSerializer()
 const HOST_URL = 'https://github.com'
 
 router
-	.get('/', function *() {
-		this.body = 'test'
-	})
-	.get('/:owner/:repo', function *() {
+	.get('/:owner/:repo/*', function *() {
 		const { owner, repo } = this.params
-		const author = this.query.author
-		const authorFilter = author ? `created_by/${author}` : ''
-		const src = `${HOST_URL}/${owner}/${repo}/issues/${authorFilter}`
+		const src = `${HOST_URL}/${owner}/${repo}/${this.params[0]}${this.search}`
 
 		const avatarRes = yield request(`${HOST_URL}/${owner}.png`)
 		const feed = new RSS({
