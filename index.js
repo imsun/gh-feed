@@ -2,6 +2,7 @@ const app = require('koa')()
 const router = require('koa-router')()
 
 const request = require('co-request')
+const { readFile } = require('co-fs')
 const RSS = require('rss')
 const { DOMParser, XMLSerializer } = require('xmldom')
 const parser = new DOMParser({
@@ -12,6 +13,11 @@ const serlializer = new XMLSerializer()
 const HOST_URL = 'https://github.com'
 
 router
+	.get('/', function *() {
+		const page = yield readFile('./index.html', 'utf8')
+		this.set('Content-Type', 'text/html; charset=utf-8')
+		this.body = page
+	})
 	.get('/:owner/:repo/*', function *() {
 		const { owner, repo } = this.params
 		const src = `${HOST_URL}/${owner}/${repo}/${this.params[0]}${this.search}`

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>gh-feed</title>
+</head>
+<body>
+<h1>gh-feed</h1>
+<h2>Generate RSS feed from GitHub Issues</h2>
+<h3>Paste the URL of project's issues page below:</h3>
+<p>Tip: You can customize your feed by adding filters on GitHub.</p>
+<input id="urlInput" type="text">
+<h3>Your feed address:</h3>
+<div id="feedAddress"></div>
+<script>
+	document.getElementById('urlInput').addEventListener('change', function() {
+		document.getElementById('feedAddress').innerText = this.value.replace(/.+?\/\/github.com/, location.origin)
+	})
+</script>
+</body>
+</html>
