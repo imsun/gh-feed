@@ -137,7 +137,7 @@ function *genFeed() {
 				url: issue.html_url,
 				categories: issue.labels.map(label => label.name),
 				author: issue.user.login,
-				date: issue.updated_at,
+				date: issue.created_at,
 				description: issue.body
 			})
 		})
