@@ -4,6 +4,7 @@ const router = require('koa-router')()
 const request = require('co-request')
 const { readFile } = require('co-fs')
 const S = require('string')
+const marked = require('marked')
 const RSS = require('rss')
 const { DOMParser, XMLSerializer } = require('xmldom')
 const parser = new DOMParser({
@@ -138,7 +139,7 @@ function *genFeed() {
 				categories: issue.labels.map(label => label.name),
 				author: issue.user.login,
 				date: issue.created_at,
-				description: issue.body
+				description: marked(issue.body)
 			})
 		})
 
