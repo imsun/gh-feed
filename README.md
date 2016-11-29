@@ -5,6 +5,10 @@ Generate RSS feed from GitHub Issues.
 
 [Check out this site](https://gh-feed.herokuapp.com)
 
+## Why
+
+Some engineers take GitHub Issues as blogs. It's easy to use, supporting Markdown, Git, code highlight, comments, notifications, and lots of fancy features. But there isn't a feed address for it. So I write this project.
+
 ## Usage
 
 1. Open project's issues page on GitHub.
@@ -21,7 +25,7 @@ By default gh-feed uses GitHub API, but rate of requests is [limited by GitHub](
 
 > For requests using Basic Authentication or OAuth, you can make up to 5,000 requests per hour. For unauthenticated requests, the rate limit allows you to make up to 60 requests per hour. Unauthenticated requests are associated with your IP address, and not the user making requests.
 
-For higher rate, you need to create `config.js` as following:
+For higher rate, you need to create `config.js` as follows:
 
 ```
 module.exports = {
