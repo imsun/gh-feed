@@ -3,7 +3,7 @@ gh-feed
 
 Generate RSS feed from GitHub Issues.
 
-[Check out this site](https://gh-feed.herokuapp.com)
+Check out [gh-feed.imsun.net](http://gh-feed.imsun.net)
 
 ## Why
 
@@ -12,7 +12,7 @@ Some engineers take GitHub Issues as blogs. It's easy to use, supporting Markdow
 ## Usage
 
 1. Open project's issues page on GitHub.
-1. Paste its URL to the input field on gh-feed's index page, or just replace `github.com` with `gh-feed.herokuapp.com`
+1. Paste its URL to the input field on gh-feed's index page, or just replace `https://github.com` with `http://gh-feed.imsun.net`
 1. Get your feed address.
 
 To customize your feed, you can add filters on issues page.
