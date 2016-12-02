@@ -113,7 +113,7 @@ function *genFeed() {
 		title: `${owner}/${repo}`,
 		generator: 'gh-feed',
 		feed_url: this.url,
-		site_url: src,
+		site_url: `https://github.com/${owner}/${repo}/${this.params[0]}${this.search}`,
 		image_url: JSON.parse(userRes.body).avatar_url,
 		ttl: 60
 	})
