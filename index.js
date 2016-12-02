@@ -144,7 +144,7 @@ function *genFeed() {
 			})
 		})
 
-	this.set('Content-Type', 'application/rss+xml; charset=utf-8')
+	this.set('Content-Type', 'application/xml; charset=utf-8')
 	this.body = feed.xml()
 }
 
@@ -202,7 +202,7 @@ function *genFeedFromPage() {
 			feed.item(issue)
 		}
 	})
-	this.set('Content-Type', 'application/rss+xml; charset=utf-8')
+	this.set('Content-Type', 'application/xml; charset=utf-8')
 	this.body = feed.xml()
 }
 
