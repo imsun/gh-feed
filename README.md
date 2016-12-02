@@ -7,7 +7,7 @@ Check out [gh-feed.imsun.net](http://gh-feed.imsun.net)
 
 ## Why
 
-Some engineers take GitHub Issues as blogs. It's easy to use, supporting Markdown, Git, code highlight, comments, notifications, and lots of fancy features. But there isn't a feed address for it. So I write this project.
+Some engineers take GitHub Issues as blogs. It's easy to use, supporting Markdown, Git, code highlighting, comments, notifications, and lots of fancy features. But there isn't a feed address for it. So I write this project.
 
 ## Usage
 
