@@ -132,6 +132,7 @@ function *genFeed() {
 	}
 
 	JSON.parse(issuesRes.body)
+		.slice(0, 25)
 		.forEach(issue => {
 			feed.item({
 				title: issue.title,
