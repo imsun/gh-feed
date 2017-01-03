@@ -12,9 +12,7 @@ const parser = new DOMParser({
 })
 const serlializer = new XMLSerializer()
 
-const config = {
-	token: ''
-}
+const config = { token: '' }
 try {
 	Object.assign(config, require('./config'))
 } catch (e) {}
@@ -23,6 +21,15 @@ if (process.env.GH_TOKEN) {
 		token: process.env.GH_TOKEN
 	})
 }
+
+const headers = {
+	'User-Agent': 'gh-feed',
+	'Accept': 'application/vnd.github.v3+json'
+}
+if (config.token) {
+	headers.Authorization = `token ${config.token}`
+}
+
 
 router
 	.get('/', function *() {
@@ -38,14 +45,6 @@ function *genFeed() {
 	console.log(`URL: ${this.url}`)
 	console.log(`Date: ${(new Date()).toGMTString()}`)
 	const host = 'https://api.github.com'
-	const headers = {
-		'User-Agent': 'request',
-		'Accept': 'application/vnd.github.v3+json'
-	}
-	if (config.token) {
-		headers.Authorization = `token ${config.token}`
-	}
-
 	const { owner, repo } = this.params
 	const filter = {}
 	const [, filterKey, filterValue ] = this.params[0].split('/')
@@ -60,47 +59,45 @@ function *genFeed() {
 
 	const queryString = this.query.q || ''
 	yield S(queryString).parseCSV(':', '"', '\\', ' ') // dirty but effective
-		.map(filterInfo => {
-			return function *() {
-				const [ filterKey, filterValue ] = filterInfo
-				switch (filterKey) {
-					case 'is':
-						if (filterValue === 'open' || filterValue === 'closed' || filterValue === 'all') {
-							filter.state = filterValue
+		.map(filterInfo => function *() {
+			const [ filterKey, filterValue ] = filterInfo
+			switch (filterKey) {
+				case 'is':
+					if (filterValue === 'open' || filterValue === 'closed' || filterValue === 'all') {
+						filter.state = filterValue
+					}
+					break
+				case 'no':
+					if (filterValue === 'milestone') {
+						filter.milestone = 'none'
+					}
+					break
+				case 'label':
+					filter.labels = filter.labels || ''
+					filter.labels += filterValue + ','
+					break
+				case 'sort':
+					const [ sortKey, direction ] = filterValue.split('-')
+					filter.sort = sortKey
+					filter.direction = direction
+					break
+				case 'author':
+					filter.creator = filterValue
+					break
+				case 'milestone':
+					const milestonesRes = yield request({
+						headers,
+						url: `${host}/repos/${owner}/${repo}/milestones`
+					})
+					const milestones = JSON.parse(milestonesRes.body)
+					for (let i = 0, len = milestones.length; i < len; i++) {
+						const milestone = milestones[i]
+						if (milestone.title === filterValue) {
+							filter.milestone = milestone.number
+							break
 						}
-						break
-					case 'no':
-						if (filterValue === 'milestone') {
-							filter.milestone = 'none'
-						}
-						break
-					case 'label':
-						filter.labels = filter.labels || ''
-						filter.labels += filterValue + ','
-						break
-					case 'sort':
-						const [ sortKey, direction ] = filterValue.split('-')
-						filter.sort = sortKey
-						filter.direction = direction
-						break
-					case 'author':
-						filter.creator = filterValue
-						break
-					case 'milestone':
-						const milestonesRes = yield request({
-							headers,
-							url: `${host}/repos/${owner}/${repo}/milestones`
-						})
-						const milestones = JSON.parse(milestonesRes.body)
-						for (let i = 0, len = milestones.length; i < len; i++) {
-							const milestone = milestones[i]
-							if (milestone.title === filterValue) {
-								filter.milestone = milestone.number
-								break
-							}
-						}
-						break
-				}
+					}
+					break
 			}
 		})
 
@@ -187,20 +184,18 @@ function *genFeedFromPage() {
 			})
 	}
 
-	yield issues.map(issue => {
-		return function *() {
-			const res = yield request(issue.url)
-			const body = res.body.replace(/<!-- '"` --><!-- <\/textarea><\/xmp> --><\/option><\/form>/g, '')
-			const id = body.match(/id="(issue-.*?)"/)[1]
-			const doc = parser.parseFromString(body, 'text/html')
-			const contentElement = doc
-				.getElementById(id)
-				.childNodes[3]
-				.childNodes[1]
-				.childNodes
-			issue.description = serlializer.serializeToString(contentElement)
-			feed.item(issue)
-		}
+	yield issues.map(issue => function *() {
+		const res = yield request(issue.url)
+		const body = res.body.replace(/<!-- '"` --><!-- <\/textarea><\/xmp> --><\/option><\/form>/g, '')
+		const id = body.match(/id="(issue-.*?)"/)[1]
+		const doc = parser.parseFromString(body, 'text/html')
+		const contentElement = doc
+			.getElementById(id)
+			.childNodes[3]
+			.childNodes[1]
+			.childNodes
+		issue.description = serlializer.serializeToString(contentElement)
+		feed.item(issue)
 	})
 	this.set('Content-Type', 'application/xml; charset=utf-8')
 	this.body = feed.xml()
