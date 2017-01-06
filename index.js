@@ -30,12 +30,26 @@ if (config.token) {
 	headers.Authorization = `token ${config.token}`
 }
 
+const hotFeeds = {}
 
 router
 	.get('/', function *() {
 		const page = yield readFile('./index.html', 'utf8')
 		this.set('Content-Type', 'text/html; charset=utf-8')
 		this.body = page
+	})
+	.get('/hot', function *() {
+		this.set('Content-Type', 'text/html; charset=utf-8')
+		this.body = `<h1>Hotest</h1><ol>${
+			Object.keys(hotFeeds)
+				.map(title => ({
+					title,
+					count: hotFeeds[title]
+				}))
+				.sort((a, b) => a.count < b.count)
+				.map(feed => `<li><a target="_blank" href="https://github.com/${feed.title}/issues">${feed.title}</a></li>`)
+				.join('')
+		}</ol>`
 	})
 	.get('/:owner/:repo/*', genFeed)
 
@@ -102,23 +116,22 @@ function *genFeed() {
 		})
 
 	const src = `${host}/repos/${owner}/${repo}/issues`
-	const userRes = yield request({
-		headers,
-		url: `${host}/users/${owner}`,
-	})
-	const feed = new RSS({
-		title: `${owner}/${repo}`,
-		generator: 'gh-feed',
-		feed_url: this.url,
-		site_url: `https://github.com/${owner}/${repo}/${this.params[0]}${this.search}`,
-		image_url: JSON.parse(userRes.body).avatar_url,
-		ttl: 60
-	})
-
 	const issuesRes = yield request({
 		headers,
 		url: src,
 		qs: filter
+	})
+
+	const feedTitle = `${owner}/${repo}`
+	hotFeeds[feedTitle] = ++hotFeeds[feedTitle] || 1
+
+	const feed = new RSS({
+		title: feedTitle,
+		generator: 'gh-feed',
+		feed_url: this.url,
+		site_url: `https://github.com/${owner}/${repo}/${this.params[0]}${this.search}`,
+		image_url: `https://github.com/${owner}.png`,
+		ttl: 60
 	})
 
 	const rateRemaining = parseInt(issuesRes.headers['x-ratelimit-remaining'])
