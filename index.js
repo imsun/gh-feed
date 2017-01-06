@@ -47,7 +47,7 @@ router
 					count: hotFeeds[title]
 				}))
 				.sort((a, b) => a.count < b.count)
-				.map(feed => `<li><a target="_blank" href="https://github.com/${feed.title}/issues">${feed.title}</a></li>`)
+				.map(feed => `<li><a target="_blank" href="https://github.com/${feed.title}/issues">${feed.title}</a> (${feed.count})</li>`)
 				.join('')
 		}</ol>`
 	})
