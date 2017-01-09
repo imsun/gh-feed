@@ -1,5 +1,6 @@
 const app = require('koa')()
 const router = require('koa-router')()
+const compress = require('koa-compress')
 
 const request = require('co-request')
 const { readFile } = require('co-fs')
@@ -53,6 +54,7 @@ router
 	})
 	.get('/:owner/:repo/*', genFeed)
 
+app.use(compress())
 app.use(router.routes())
 
 function *genFeed() {
