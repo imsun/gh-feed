@@ -176,7 +176,7 @@ function *genFeedFromPage() {
 	const doc = parser.parseFromString(res.body, 'text/html')
 	const issues = []
 	const ul = doc.getElementsByTagName('ul')[1]
-	if (ul && ul.getAttribute('class') === 'Box-body js-navigation-container js-active-navigation-container') {
+	if (ul && ul.getAttribute('class') === 'js-navigation-container js-active-navigation-container') {
 		Array.from(ul.getElementsByTagName('li'))
 			.forEach(li => {
 				const issue = {}
@@ -204,8 +204,7 @@ function *genFeedFromPage() {
 		const doc = parser.parseFromString(body, 'text/html')
 		const contentElement = doc
 			.getElementById(id)
-			.childNodes[3]
-			.childNodes[1]
+			.getElementsByTagName('td')[0]
 			.childNodes
 		issue.description = serlializer.serializeToString(contentElement)
 		feed.item(issue)
