@@ -155,7 +155,7 @@ function *genFeed() {
 		})
 
 	this.set('Content-Type', 'application/xml; charset=utf-8')
-	this.body = feed.xml()
+	this.body = feed.xml().replace(/[\u0000-\u0008\u0011-\u001F\u007F\u0080-\u009F]/g, '�')
 }
 
 function *genFeedFromPage() {
