@@ -152,7 +152,7 @@ function *genFeed() {
 				categories: issue.labels.map(label => label.name),
 				author: issue.user.login,
 				date: issue.created_at,
-				description: marked(issue.body)
+				description: marked(issue.body || '')
 			})
 		})
 
